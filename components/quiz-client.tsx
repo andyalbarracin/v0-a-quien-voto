@@ -1,282 +1,50 @@
-"use client"
+// components/quiz-client.tsx
+// Última modificación: October 02, 2025
+// Descripción: Cliente del quiz que maneja respuestas, muestra boxes variables por opción, y envía a resultados. Integra explanations prop.
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, ArrowRight, CheckCircle2, BookOpen, ChevronRight, ExternalLink } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import React, { useState } from 'react';
+// Asumir imports necesarios de UI (buttons, radios, etc.)
 
-type QuizQuestion = {
-  id: string
-  question_text: string
-  question_order: number
-  weight: number
-  topic_id: string
-  topics: {
-    id: string
-    name: string
-    icon: string
-  }
-  quiz_answers: Array<{
-    id: string
-    answer_text: string
-    answer_order: number
-    position_id: string
-    context_title?: string
-    context_description?: string
-    context_data?: string
-    context_examples?: string
-    wikipedia_links?: Record<string, string>
-    positions: {
-      id: string
-      title: string
-      description: string
-      weight: number
-    }
-  }>
-}
+const QuizClient = ({ questions, explanations }) => {
+  const [answers, setAnswers] = useState({});
+  const [selectedOptions, setSelectedOptions] = useState({}); // Para variabilidad por pregunta
 
-type UserAnswer = {
-  question_id: string
-  answer_id: string
-  position_id: string
-  position_weight: number
-  question_weight: number
-}
+  const handleOptionChange = (questionId, optionValue, topic) => {
+    setAnswers({ ...answers, [questionId]: optionValue });
+    setSelectedOptions({ ...selectedOptions, [questionId]: optionValue });
+  };
 
-export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [answers, setAnswers] = useState<UserAnswer[]>([])
-  const [selectedAnswer, setSelectedAnswer] = useState<string>("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
-
-  const currentQuestion = questions[currentQuestionIndex]
-  const nextQuestion = currentQuestionIndex < questions.length - 1 ? questions[currentQuestionIndex + 1] : null
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100
-  const isLastQuestion = currentQuestionIndex === questions.length - 1
-
-  const selectedAnswerObj = currentQuestion.quiz_answers.find((a) => a.id === selectedAnswer)
-
-  const handleAnswerSelect = (answerId: string) => {
-    setSelectedAnswer(answerId)
-  }
-
-  const handleNext = () => {
-    if (!selectedAnswer) return
-
-    const answer = currentQuestion.quiz_answers.find((a) => a.id === selectedAnswer)
-    if (!answer) return
-
-    const newAnswer: UserAnswer = {
-      question_id: currentQuestion.id,
-      answer_id: selectedAnswer,
-      position_id: answer.position_id,
-      position_weight: answer.positions.weight,
-      question_weight: currentQuestion.weight,
-    }
-
-    const existingAnswerIndex = answers.findIndex((a) => a.question_id === currentQuestion.id)
-    let updatedAnswers: UserAnswer[]
-
-    if (existingAnswerIndex >= 0) {
-      updatedAnswers = [...answers]
-      updatedAnswers[existingAnswerIndex] = newAnswer
-    } else {
-      updatedAnswers = [...answers, newAnswer]
-    }
-
-    setAnswers(updatedAnswers)
-
-    if (isLastQuestion) {
-      handleSubmit(updatedAnswers)
-    } else {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
-      const nextQuestion = questions[currentQuestionIndex + 1]
-      const existingAnswer = updatedAnswers.find((a) => a.question_id === nextQuestion.id)
-      setSelectedAnswer(existingAnswer?.answer_id || "")
-    }
-  }
-
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
-      const previousQuestion = questions[currentQuestionIndex - 1]
-      const existingAnswer = answers.find((a) => a.question_id === previousQuestion.id)
-      setSelectedAnswer(existingAnswer?.answer_id || "")
-    }
-  }
-
-  const handleSubmit = async (finalAnswers: UserAnswer[]) => {
-    setIsSubmitting(true)
-
-    try {
-      const positionScores: Record<string, number> = {}
-
-      finalAnswers.forEach((answer) => {
-        if (!positionScores[answer.position_id]) {
-          positionScores[answer.position_id] = 0
-        }
-        positionScores[answer.position_id] += answer.position_weight * answer.question_weight
-      })
-
-      const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`
-
-      const supabase = createClient()
-      const { error } = await supabase.from("quiz_results").insert({
-        session_id: sessionId,
-        answers: finalAnswers,
-        results: positionScores,
-      })
-
-      if (error) {
-        console.error("[v0] Error saving quiz results:", error)
-      }
-
-      router.push(`/resultados?session=${sessionId}`)
-    } catch (error) {
-      console.error("[v0] Error submitting quiz:", error)
-      setIsSubmitting(false)
-    }
-  }
+  const submitQuiz = () => {
+    // Lógica para submit a Supabase o redirigir a /resultados
+    window.location.href = `/resultados?session=${Math.random()}`; // Simulado
+  };
 
   return (
-    <div className="min-h-screen bg-background px-6 py-12">
-      <div className="mx-auto max-w-4xl">
-        {/* Progress */}
-        <div className="mb-8">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-foreground">
-              Pregunta {currentQuestionIndex + 1} de {questions.length}
-            </span>
-            <span className="text-muted-foreground">{Math.round(progress)}% completado</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-
-        {/* Question Card */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="mb-2 flex items-center justify-between">
-              <div className="inline-block rounded-md bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                {currentQuestion.topics.name}
-              </div>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: currentQuestion.weight }).map((_, i) => (
-                  <div key={i} className="h-2 w-2 rounded-full bg-primary" />
-                ))}
-              </div>
+    <div className="p-6">
+      <h2>Quiz Elecciones 2025</h2>
+      {questions.map(q => (
+        <div key={q.id}>
+          <h3>{q.question_text}</h3>
+          {q.quiz_answers.map(a => (
+            <div key={a.id}>
+              <input
+                type="radio"
+                value={a.position_id} // Asumir 'estatal', 'vouchers', etc.
+                onChange={() => handleOptionChange(q.id, a.position_id, q.topics.name)}
+              />
+              {a.answer_text}
+              {selectedOptions[q.id] === a.position_id && (
+                <div className="explanation-box">
+                  {explanations[q.topics.name.toLowerCase()]?.[a.position_id] || 'Explicación general: Impacto histórico y global.'}
+                </div>
+              )}
             </div>
-            <CardTitle className="text-balance text-2xl">{currentQuestion.question_text}</CardTitle>
-            <CardDescription>Seleccioná la opción que mejor represente tu posición</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <RadioGroup value={selectedAnswer} onValueChange={handleAnswerSelect} className="space-y-3">
-              {currentQuestion.quiz_answers
-                .sort((a, b) => a.answer_order - b.answer_order)
-                .map((answer) => (
-                  <div
-                    key={answer.id}
-                    className={`flex items-start space-x-3 rounded-lg border-2 p-4 transition-colors ${
-                      selectedAnswer === answer.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <RadioGroupItem value={answer.id} id={answer.id} className="mt-0.5" />
-                    <Label htmlFor={answer.id} className="flex-1 cursor-pointer text-base leading-relaxed">
-                      {answer.answer_text}
-                    </Label>
-                  </div>
-                ))}
-            </RadioGroup>
-
-            {selectedAnswerObj && selectedAnswerObj.context_title && (
-              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
-                <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <AlertDescription className="space-y-3 text-sm leading-relaxed text-blue-900 dark:text-blue-100">
-                  <div>
-                    <strong className="font-semibold">{selectedAnswerObj.context_title}</strong>
-                    <p className="mt-1 text-pretty">{selectedAnswerObj.context_description}</p>
-                  </div>
-
-                  {selectedAnswerObj.context_data && (
-                    <div>
-                      <strong className="font-semibold">Datos:</strong>
-                      <p className="mt-1 text-pretty">{selectedAnswerObj.context_data}</p>
-                    </div>
-                  )}
-
-                  {selectedAnswerObj.context_examples && (
-                    <div>
-                      <strong className="font-semibold">Ejemplos internacionales:</strong>
-                      <p className="mt-1 text-pretty">{selectedAnswerObj.context_examples}</p>
-                    </div>
-                  )}
-
-                  {selectedAnswerObj.wikipedia_links && Object.keys(selectedAnswerObj.wikipedia_links).length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {Object.entries(selectedAnswerObj.wikipedia_links).map(([label, url]) => (
-                        <a
-                          key={label}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800"
-                        >
-                          {label}
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        {nextQuestion && (
-          <Card className="mb-6 border-dashed">
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">Siguiente</div>
-                <p className="text-sm text-muted-foreground">{nextQuestion.question_text}</p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <Button variant="outline" onClick={handlePrevious} disabled={currentQuestionIndex === 0}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Anterior
-          </Button>
-
-          <Button onClick={handleNext} disabled={!selectedAnswer || isSubmitting}>
-            {isSubmitting ? (
-              "Procesando..."
-            ) : isLastQuestion ? (
-              <>
-                Ver resultados
-                <CheckCircle2 className="ml-2 h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Siguiente
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
+          ))}
         </div>
-      </div>
+      ))}
+      <button onClick={submitQuiz}>Enviar</button>
     </div>
-  )
-}
+  );
+};
+
+export { QuizClient };

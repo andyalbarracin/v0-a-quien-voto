@@ -1,3 +1,7 @@
+// app/globals.css
+// Última modificación: October 02, 2025
+// Descripción: Estilos globales con Tailwind, colores actualizados para app política. Agregadas clases para botón "Ejemplos Internacionales" más visible (gradiente, hover scale/shadow), y estilos para boxes explicativos/toggles.
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -124,4 +128,49 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Nueva clase para botón Ejemplos Internacionales más visible */
+.international-btn {
+  background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.international-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Estilos para boxes explicativos variables */
+.explanation-box {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  padding: 16px;
+  margin-top: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #856404;
+}
+
+/* Estilos para toggle Mostrar/Ocultar Detalles */
+.details-toggle {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.details-toggle:hover {
+  background-color: #0056b3;
+}
+.details-content {
+  margin-top: 8px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
 }

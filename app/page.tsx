@@ -1,3 +1,7 @@
+// app/page.tsx
+// Última modificación: October 02, 2025
+// Descripción: Página principal de la aplicación que presenta el quiz sobre elecciones argentinas 2025, con secciones hero, temas clave, cómo funciona y transparencia. Incluye mejoras para enlaces a secciones nuevas como metodología y partidos.
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +18,7 @@ export default function HomePage() {
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground md:text-xl">
             Descubrí qué candidatos y partidos políticos se alinean con tus valores. Respondé preguntas sobre temas que
-            te importan y obtené resultados basados en datos reales.
+            te importan y obtené resultados basados en datos reales, con análisis de repercusiones globales y benchmarks internacionales.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button asChild size="lg" className="w-full sm:w-auto">
@@ -38,7 +42,7 @@ export default function HomePage() {
               Temas que importan
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-pretty text-muted-foreground">
-              Evaluamos las posiciones de candidatos y partidos en los temas más relevantes para Argentina
+              Evaluamos las posiciones de candidatos y partidos en los temas más relevantes para Argentina, con contrastes históricos y benchmarks globales (WB/OECD).
             </p>
           </div>
 
@@ -47,7 +51,7 @@ export default function HomePage() {
               <CardHeader>
                 <TrendingUp className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Economía</CardTitle>
-                <CardDescription>Políticas económicas, gasto público, inflación y desarrollo</CardDescription>
+                <CardDescription>Políticas económicas, gasto público, inflación y desarrollo. Ej: Liberalización en Chile vs. Estatismo en Venezuela.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -56,7 +60,7 @@ export default function HomePage() {
                 <Shield className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Seguridad</CardTitle>
                 <CardDescription>
-                  Políticas de seguridad ciudadana, sistema penal y fuerzas de seguridad
+                  Políticas de seguridad ciudadana, sistema penal y fuerzas de seguridad. Contradicciones en votaciones de izquierda/kirchneristas.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -65,7 +69,7 @@ export default function HomePage() {
               <CardHeader>
                 <Heart className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Salud</CardTitle>
-                <CardDescription>Sistema de salud pública, cobertura médica y políticas sanitarias</CardDescription>
+                <CardDescription>Sistema de salud pública, cobertura médica y políticas sanitarias. Recortes bajo Massa 2022 (-ARS 50kM).</CardDescription>
               </CardHeader>
             </Card>
 
@@ -73,7 +77,7 @@ export default function HomePage() {
               <CardHeader>
                 <GraduationCap className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Educación</CardTitle>
-                <CardDescription>Sistema educativo, universidades y presupuesto educativo</CardDescription>
+                <CardDescription>Sistema educativo, universidades y presupuesto. Recortes Massa 2022 (70% inicial, deserción +15% PBA).</CardDescription>
               </CardHeader>
             </Card>
 
@@ -81,7 +85,7 @@ export default function HomePage() {
               <CardHeader>
                 <Scale className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Justicia</CardTitle>
-                <CardDescription>Sistema judicial, derechos humanos y reformas legales</CardDescription>
+                <CardDescription>Sistema judicial, derechos humanos y reformas legales. Abstenciones en leyes contra pornografía infantil (FIT).</CardDescription>
               </CardHeader>
             </Card>
 
@@ -89,7 +93,7 @@ export default function HomePage() {
               <CardHeader>
                 <Briefcase className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Trabajo</CardTitle>
-                <CardDescription>Políticas laborales, sindicatos y empleo</CardDescription>
+                <CardDescription>Políticas laborales, sindicatos y empleo. Reformas flexibles vs. rígidas (EE.UU. empleo 55% vs. Venezuela 20%).</CardDescription>
               </CardHeader>
             </Card>
           </div>
@@ -104,7 +108,7 @@ export default function HomePage() {
               ¿Cómo funciona?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-pretty text-muted-foreground">
-              Un proceso simple y transparente para ayudarte a tomar decisiones informadas
+              Un proceso simple y transparente para ayudarte a tomar decisiones informadas, con análisis basados en datos WB/OECD y votaciones reales.
             </p>
           </div>
 
@@ -115,7 +119,7 @@ export default function HomePage() {
               </div>
               <h3 className="mt-4 text-xl font-semibold text-foreground">Respondé el cuestionario</h3>
               <p className="mt-2 text-pretty text-muted-foreground">
-                Contestá preguntas sobre temas de economía, seguridad, salud, educación y más
+                Contestá preguntas sobre temas de economía, seguridad, salud, educación y más, con explicaciones variables por opción.
               </p>
             </div>
 
@@ -125,7 +129,7 @@ export default function HomePage() {
               </div>
               <h3 className="mt-4 text-xl font-semibold text-foreground">Analizamos tus respuestas</h3>
               <p className="mt-2 text-pretty text-muted-foreground">
-                Comparamos tus posiciones con votaciones y declaraciones públicas verificables
+                Comparamos tus posiciones con votaciones, declaraciones y antecedentes verificables, incluyendo contradicciones y benchmarks globales.
               </p>
             </div>
 
@@ -135,7 +139,7 @@ export default function HomePage() {
               </div>
               <h3 className="mt-4 text-xl font-semibold text-foreground">Obtené tus resultados</h3>
               <p className="mt-2 text-pretty text-muted-foreground">
-                Descubrí qué partidos se alinean mejor con tus valores y por qué
+                Descubrí qué partidos se alinean mejor con tus valores y por qué, con detalles de repercusiones mundiales.
               </p>
             </div>
           </div>
@@ -160,7 +164,7 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
             Todos nuestros datos provienen de fuentes oficiales: registros de votación del Congreso, declaraciones
             públicas verificadas y posiciones documentadas. Cada resultado incluye referencias a las fuentes originales
-            para que puedas verificar la información.
+            para que puedas verificar la información, con simulaciones de análisis basadas en datos reales.
           </p>
           <div className="mt-8">
             <Button asChild variant="outline" size="lg">
