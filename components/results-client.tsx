@@ -2,13 +2,33 @@
 // Última modificación: October 02, 2025
 // Descripción: Cliente de resultados que renderiza partyResults con secciones declarations, votes, antecedentes, analysis (con mundiales), contradicciones, y toggle para detalles.
 
+"use client"; // Marca como Client Component para usar useState
+
 import React, { useState } from 'react';
-// Asumir imports UI (cards, buttons, etc.)
 
-const ResultsClient = ({ results, userAnswers, userCompassPosition }) => {
-  const [showDetails, setShowDetails] = useState({});
+interface ResultsClientProps {
+  results: Array<{
+    party: {
+      id: string;
+      name: string;
+    };
+    percentage: number;
+    compassDistance: number;
+    declarations: Array<{ date: string; text: string }>;
+    votes: Array<{ date: string; desc: string; contradiction: string | null }>;
+    antecedentes: string[];
+    analysis: string;
+    matches: Array<{ position: string; topic: string }>;
+    conflicts: Array<{ position: string; topic: string }>;
+  }>;
+  userAnswers: Array<{ position_id: string; position_weight: number; question_weight: number }>;
+  userCompassPosition: { economic: number; social: number };
+}
 
-  const toggleDetails = (partyId) => {
+const ResultsClient = ({ results, userAnswers, userCompassPosition }: ResultsClientProps) => {
+  const [showDetails, setShowDetails] = useState<Record<string, boolean>>({});
+
+  const toggleDetails = (partyId: string) => {
     setShowDetails({ ...showDetails, [partyId]: !showDetails[partyId] });
   };
 

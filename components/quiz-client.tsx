@@ -2,14 +2,31 @@
 // Última modificación: October 02, 2025
 // Descripción: Cliente del quiz que maneja respuestas, muestra boxes variables por opción, y envía a resultados. Integra explanations prop.
 
+"use client"; // Marca como Client Component para usar useState
+
 import React, { useState } from 'react';
-// Asumir imports necesarios de UI (buttons, radios, etc.)
 
-const QuizClient = ({ questions, explanations }) => {
-  const [answers, setAnswers] = useState({});
-  const [selectedOptions, setSelectedOptions] = useState({}); // Para variabilidad por pregunta
+interface QuizClientProps {
+  questions: Array<{
+    id: string;
+    question_text: string;
+    quiz_answers: Array<{
+      id: string;
+      position_id: string;
+      answer_text: string;
+    }>;
+    topics: {
+      name: string;
+    };
+  }>;
+  explanations: Record<string, Record<string, string>>;
+}
 
-  const handleOptionChange = (questionId, optionValue, topic) => {
+const QuizClient = ({ questions, explanations }: QuizClientProps) => {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+
+  const handleOptionChange = (questionId: string, optionValue: string, topic: string) => {
     setAnswers({ ...answers, [questionId]: optionValue });
     setSelectedOptions({ ...selectedOptions, [questionId]: optionValue });
   };

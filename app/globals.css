@@ -1,11 +1,14 @@
-// app/globals.css
-// Última modificación: October 02, 2025
-// Descripción: Estilos globales con Tailwind, colores actualizados para app política. Agregadas clases para botón "Ejemplos Internacionales" más visible (gradiente, hover scale/shadow), y estilos para boxes explicativos/toggles.
+/* app/globals.css */
+/* Última modificación: October 02, 2025 */
+/* Descripción: Estilos globales con Tailwind, colores actualizados para app política. Agregadas clases para botón "Ejemplos Internacionales" más visible (gradiente, hover scale/shadow), y estilos para boxes explicativos/toggles. */
 
-@import "tailwindcss";
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:is(.dark *)); */ /* Comentado si no se usa, o remueve si causa error */
 
 :root {
   /* Updated color palette for political app - professional and trustworthy */

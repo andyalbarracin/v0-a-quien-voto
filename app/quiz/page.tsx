@@ -6,6 +6,30 @@ import { createClient } from "@/lib/supabase/server"
 import { QuizClient } from "@/components/quiz-client"
 import { redirect } from "next/navigation"
 
+interface Question {
+  id: string;
+  question_text: string;
+  question_order: number;
+  topic_id: string;
+  topics: {
+    id: string;
+    name: string;
+    icon: string;
+  };
+  quiz_answers: Array<{
+    id: string;
+    answer_text: string;
+    answer_order: number;
+    position_id: string;
+    positions: {
+      id: string;
+      title: string;
+      description: string;
+      weight: number;
+    };
+  }>;
+}
+
 export default async function QuizPage() {
   const supabase = await createClient()
 
@@ -37,7 +61,7 @@ export default async function QuizPage() {
       )
     `,
     )
-    .order("question_order", { ascending: true })
+    .order("question_order", { ascending: true }) as { data: Question[]; error: any };
 
   if (error) {
     console.error("[v0] Error fetching quiz questions:", error)
@@ -56,7 +80,7 @@ export default async function QuizPage() {
   }
 
   // Agregar explicaciones variables por opción (hardcodeadas basadas en datos WB/OECD y doc adjunto)
-  const explanations = {
+  const explanations: Record<string, Record<string, string>> = {
     // Ejemplo para pregunta de educación (asumiendo ID o texto contiene 'educación')
     education: {
       estatal: "En Argentina, presupuestos educación recortados 70% bajo Massa (2022, ARS 70kM pese inflación; +15% deserción PBA). Aumento reciente Milei sin auditorías. Global: Cuba gasto alto pero HDI 0.78 vs. Singapur 0.94.",

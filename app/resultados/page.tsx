@@ -7,10 +7,14 @@ import { redirect } from "next/navigation"
 import { ResultsClient } from "@/components/results-client"
 import { calculateCompassPosition } from "@/lib/calculate-compass-position"
 
+interface SearchParams {
+  session?: string;
+}
+
 export default async function ResultadosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session?: string }>
+  searchParams: Promise<SearchParams>;
 }) {
   const { session } = await searchParams
 
@@ -58,16 +62,27 @@ export default async function ResultadosPage({
     `,
   )
 
-  const userAnswers = quizResult.answers as Array<{
-    position_id: string
-    position_weight: number
-    question_weight: number
-  }>
+  interface UserAnswer {
+    position_id: string;
+    position_weight: number;
+    question_weight: number;
+  }
+
+  const userAnswers: UserAnswer[] = quizResult.answers as UserAnswer[];
 
   const userCompassPosition = calculateCompassPosition(userAnswers, positions || [])
 
-  // Datos hardcodeados de candidatos del doc adjunto + tools (declaraciones recientes, votaciones, antecedentes, etc.)
-  const candidateData = [
+  interface Candidate {
+    name: string;
+    party: string;
+    ideology: { libertarian: number; socialist: number; liberal: number; statist: number };
+    declarations: Array<{ date: string; text: string }>;
+    votes: Array<{ date: string; desc: string; contradiction: string | null }>;
+    antecedentes: string[];
+    analysis: string;
+  }
+
+  const candidateData: Candidate[] = [
     {
       name: 'Jorge Taiana',
       party: 'Fuerza Patria',
@@ -113,7 +128,6 @@ export default async function ResultadosPage({
       ],
       analysis: 'Propuestas socialistas: Como Brasil Bolsa Familia (hambre -25% pero inflación +10%). Benchmark OECD 2025: Economías cerradas Venezuela inflación 150%, emigración 7M vs. Singapur abierta PIB pc USD 80k. Repercusiones: Dependencia crónica, pobreza 90% Venezuela.',
     },
-    // Agregar del Caño, Bregman, Espert similarmente con datos de tools/doc.
     {
       name: 'Nicolás del Caño',
       party: 'FIT',
@@ -180,26 +194,25 @@ export default async function ResultadosPage({
   ];
 
   // Simulación IA: Hardcode análisis basado en doc/tools
-  const simulateAnalysis = (candidate, userAnswers) => {
+  const simulateAnalysis = (candidate: Candidate, userAnswers: UserAnswer[]) => {
     // Lógica simple: Match propuestas con benchmarks
     return `Análisis simulado: Tus respuestas alinean ${candidate.name} con modelos como ${candidate.analysis.split('.')[0]}. Global: Mayor libertad económica correlaciona +20% PIB pc (Heritage/Fraser 2025, r=0.85 WB).`;
   };
 
-  const partyScores: Record<
-    string,
-    {
-      score: number
-      maxScore: number
-      matches: Array<{ position: string; topic: string }>
-      conflicts: Array<{ position: string; topic: string }>
-      compassDistance: number
-      details: string // Para toggle
-    }
-  > = {}
+  interface PartyScore {
+    score: number;
+    maxScore: number;
+    matches: Array<{ position: string; topic: string }>;
+    conflicts: Array<{ position: string; topic: string }>;
+    compassDistance: number;
+    details: string; // Para toggle
+  }
+
+  const partyScores: Record<string, PartyScore> = {};
 
   // Inicializar con ideologías y datos
   parties?.forEach((party) => {
-    const cand = candidateData.find(c => c.party === party.name) || {}; // Match por party
+    const cand = candidateData.find(c => c.party === party.name) || {} as Candidate;
     partyScores[party.id] = {
       score: 0,
       maxScore: 0,
@@ -247,13 +260,25 @@ export default async function ResultadosPage({
     })
   });
 
-  const partyResults = parties
+  interface PartyResult {
+    party: any; // Asumir tipo de Supabase
+    percentage: number;
+    matches: Array<{ position: string; topic: string }>;
+    conflicts: Array<{ position: string; topic: string }>;
+    compassDistance: number;
+    declarations: Array<{ date: string; text: string }>;
+    votes: Array<{ date: string; desc: string; contradiction: string | null }>;
+    antecedentes: string[];
+    analysis: string;
+  }
+
+  const partyResults: PartyResult[] = parties
     ?.map((party) => {
       const scores = partyScores[party.id]
       const percentage = scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
 
       // Integrar candidateData
-      const cand = candidateData.find(c => c.party === party.name) || {};
+      const cand = candidateData.find(c => c.party === party.name) || {} as Candidate;
       return {
         party,
         percentage,
@@ -270,12 +295,12 @@ export default async function ResultadosPage({
       const distanceDiff = a.compassDistance - b.compassDistance
       if (Math.abs(distanceDiff) > 1) return distanceDiff
       return b.percentage - a.percentage
-    })
+    }) || [];
 
   return (
     <ResultsClient
-      results={partyResults || []}
-      userAnswers={quizResult.answers}
+      results={partyResults}
+      userAnswers={userAnswers}
       userCompassPosition={userCompassPosition}
     />
   )
