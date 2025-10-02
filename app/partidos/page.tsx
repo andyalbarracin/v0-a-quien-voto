@@ -1,8 +1,23 @@
+// app/partidos/page.tsx
+// Última modificación: October 02, 2025
+// Descripción: Página que lista partidos políticos, fetcha de Supabase y muestra cards con detalles (nombre, acrónimo, ideología, descripción, fundado, website). Incluye link a detalles por partido.
+
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
+
+interface Party {
+  id: string;
+  name: string;
+  acronym: string;
+  ideology: string | null;
+  description: string | null;
+  founded_year: string | null;
+  website_url: string | null;
+  candidates: { count: number }[];
+}
 
 export default async function PartidosPage() {
   const supabase = await createClient()
@@ -15,7 +30,7 @@ export default async function PartidosPage() {
       candidates (count)
     `,
     )
-    .order("name", { ascending: true })
+    .order("name", { ascending: true }) as { data: Party[] | null; error: any };
 
   if (error) {
     console.error("[v0] Error fetching parties:", error)

@@ -76,7 +76,7 @@ export default async function CandidateDetailPage({ params }: { params: Promise<
               <AvatarFallback className="text-2xl">
                 {candidate.full_name
                   .split(" ")
-                  .map((n) => n[0])
+                  .map((n: string) => n[0])
                   .join("")
                   .substring(0, 2)
                   .toUpperCase()}

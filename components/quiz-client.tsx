@@ -16,8 +16,10 @@ interface QuizClientProps {
       answer_text: string;
     }>;
     topics: {
+      id: string;
       name: string;
-    };
+      icon: string;
+    } | null;
   }>;
   explanations: Record<string, Record<string, string>>;
 }
@@ -46,11 +48,11 @@ const QuizClient = ({ questions, explanations }: QuizClientProps) => {
             <div key={a.id}>
               <input
                 type="radio"
-                value={a.position_id} // Asumir 'estatal', 'vouchers', etc.
-                onChange={() => handleOptionChange(q.id, a.position_id, q.topics.name)}
+                value={a.position_id}
+                onChange={() => handleOptionChange(q.id, a.position_id, q.topics?.name || 'general')}
               />
               {a.answer_text}
-              {selectedOptions[q.id] === a.position_id && (
+              {selectedOptions[q.id] === a.position_id && q.topics && (
                 <div className="explanation-box">
                   {explanations[q.topics.name.toLowerCase()]?.[a.position_id] || 'Explicación general: Impacto histórico y global.'}
                 </div>

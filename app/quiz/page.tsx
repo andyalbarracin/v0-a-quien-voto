@@ -15,7 +15,7 @@ interface Question {
     id: string;
     name: string;
     icon: string;
-  };
+  } | null;
   quiz_answers: Array<{
     id: string;
     answer_text: string;
@@ -26,7 +26,7 @@ interface Question {
       title: string;
       description: string;
       weight: number;
-    };
+    } | null;
   }>;
 }
 
@@ -34,7 +34,7 @@ export default async function QuizPage() {
   const supabase = await createClient()
 
   // Fetch all quiz questions with their answers and related data
-  const { data: questions, error } = await supabase
+  const { data: rawQuestions, error } = await supabase
     .from("quiz_questions")
     .select(
       `
@@ -61,14 +61,14 @@ export default async function QuizPage() {
       )
     `,
     )
-    .order("question_order", { ascending: true }) as { data: Question[]; error: any };
+    .order("question_order", { ascending: true });
 
   if (error) {
     console.error("[v0] Error fetching quiz questions:", error)
     redirect("/")
   }
 
-  if (!questions || questions.length === 0) {
+  if (!rawQuestions || rawQuestions.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">
@@ -78,6 +78,16 @@ export default async function QuizPage() {
       </div>
     )
   }
+
+  // Transformar los datos para que topics sea un objeto único en lugar de array
+  const questions: Question[] = rawQuestions.map((q: any) => ({
+    ...q,
+    topics: Array.isArray(q.topics) ? q.topics[0] || null : q.topics,
+    quiz_answers: q.quiz_answers.map((a: any) => ({
+      ...a,
+      positions: Array.isArray(a.positions) ? a.positions[0] || null : a.positions
+    }))
+  }));
 
   // Agregar explicaciones variables por opción (hardcodeadas basadas en datos WB/OECD y doc adjunto)
   const explanations: Record<string, Record<string, string>> = {

@@ -45,7 +45,7 @@ export default async function CandidatosPage() {
                       <AvatarFallback className="text-lg">
                         {candidate.full_name
                           .split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("")
                           .substring(0, 2)
                           .toUpperCase()}

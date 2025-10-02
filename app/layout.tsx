@@ -1,3 +1,7 @@
+// app/layout.tsx
+// Última modificación: October 02, 2025
+// Descripción: Layout raíz de la aplicación que establece metadata, fonts, analytics y navegación global. Incluye Suspense para loading y corrige import de globals.css a path relativo correcto.
+
 import type React from "react"
 import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
@@ -5,7 +9,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Navigation } from "@/components/navigation"
 import { Suspense } from "react"
-import "./globals.css"
+import "@/app/globals.css" // Corregido: Import path relativo con @ alias para resolver Module not found
 
 export const metadata: Metadata = {
   title: "¿A quién voto? - Descubrí tu partido político ideal",

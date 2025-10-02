@@ -11,6 +11,36 @@ interface SearchParams {
   session?: string;
 }
 
+interface Topic {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+interface Position {
+  id: string;
+  title: string;
+  description: string;
+  weight: number;
+  economic_weight: number;
+  social_weight: number;
+  topics: Topic | Topic[] | null;
+}
+
+interface PartyPosition {
+  party_id: string;
+  position_id: string;
+  stance: string;
+  strength: number | null;
+}
+
+interface Party {
+  id: string;
+  name: string;
+  economic_axis: number | null;
+  social_axis: number | null;
+}
+
 export default async function ResultadosPage({
   searchParams,
 }: {
@@ -35,7 +65,7 @@ export default async function ResultadosPage({
     redirect("/quiz")
   }
 
-  const { data: parties } = await supabase.from("political_parties").select("*, economic_axis, social_axis")
+  const { data: parties } = await supabase.from("political_parties").select("*, economic_axis, social_axis") as { data: Party[] | null };
 
   const { data: partyPositions } = await supabase.from("party_positions").select(
     `
@@ -44,9 +74,9 @@ export default async function ResultadosPage({
       stance,
       strength
     `,
-  )
+  ) as { data: PartyPosition[] | null };
 
-  const { data: positions } = await supabase.from("positions").select(
+  const { data: rawPositions } = await supabase.from("positions").select(
     `
       id,
       title,
@@ -61,6 +91,14 @@ export default async function ResultadosPage({
       )
     `,
   )
+
+  // Transformar positions para normalizar topics
+ const positions: Position[] = (rawPositions || []).map((p: any) => ({
+  ...p,
+  topics: Array.isArray(p.topics) ? p.topics[0] : p.topics,
+  economic_weight: p.economic_weight ?? 0,
+  social_weight: p.social_weight ?? 0
+}));
 
   interface UserAnswer {
     position_id: string;
@@ -192,7 +230,6 @@ export default async function ResultadosPage({
       analysis: 'Propuestas liberales: Chile liberalización agro +200% export, PIB pc x4. Ecuador dolarización inflación 0%. Repercusiones: Empleo +10%, vs. cierre Venezuela -50%. OECD: Libertad laboral correlación empleo 60%.',
     },
   ];
-
   // Simulación IA: Hardcode análisis basado en doc/tools
   const simulateAnalysis = (candidate: Candidate, userAnswers: UserAnswer[]) => {
     // Lógica simple: Match propuestas con benchmarks
@@ -205,7 +242,7 @@ export default async function ResultadosPage({
     matches: Array<{ position: string; topic: string }>;
     conflicts: Array<{ position: string; topic: string }>;
     compassDistance: number;
-    details: string; // Para toggle
+    details: string;
   }
 
   const partyScores: Record<string, PartyScore> = {};
@@ -222,9 +259,16 @@ export default async function ResultadosPage({
         Math.pow(userCompassPosition.economic - (party.economic_axis || 0), 2) +
           Math.pow(userCompassPosition.social - (party.social_axis || 0), 2),
       ),
-      details: simulateAnalysis(cand, userAnswers), // Simulación IA
+      details: simulateAnalysis(cand, userAnswers),
     };
   });
+
+  // Helper function para obtener el nombre del topic
+  const getTopicName = (topics: Topic | Topic[] | null): string => {
+    if (!topics) return "General";
+    if (Array.isArray(topics)) return topics[0]?.name || "General";
+    return topics.name || "General";
+  };
 
   // Calcular scores con pesos ideológicos
   userAnswers.forEach((answer) => {
@@ -248,12 +292,12 @@ export default async function ResultadosPage({
           partyScores[party.id].score += answerWeight * (strength / 5)
           partyScores[party.id].matches.push({
             position: position.title,
-            topic: position.topics?.name || "General",
+            topic: getTopicName(position.topics),
           })
         } else if (partyPosition.stance === "contra") {
           partyScores[party.id].conflicts.push({
             position: position.title,
-            topic: position.topics?.name || "General",
+            topic: getTopicName(position.topics),
           })
         }
       }
@@ -261,7 +305,7 @@ export default async function ResultadosPage({
   });
 
   interface PartyResult {
-    party: any; // Asumir tipo de Supabase
+    party: Party;
     percentage: number;
     matches: Array<{ position: string; topic: string }>;
     conflicts: Array<{ position: string; topic: string }>;
@@ -277,7 +321,6 @@ export default async function ResultadosPage({
       const scores = partyScores[party.id]
       const percentage = scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
 
-      // Integrar candidateData
       const cand = candidateData.find(c => c.party === party.name) || {} as Candidate;
       return {
         party,
