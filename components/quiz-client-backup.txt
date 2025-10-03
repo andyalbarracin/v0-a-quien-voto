@@ -1,3 +1,8 @@
+// components/quiz-client.tsx
+// Ruta: components/quiz-client.tsx
+// Última modificación: October 02, 2025
+// Descripción: Cliente del quiz con diseño completo en cards, navegación, progreso, context boxes informativos y guardado en Supabase.
+
 "use client"
 
 import { useState } from "react"
@@ -216,6 +221,23 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
                       <p className="mt-1 text-pretty">{selectedAnswerObj.context_examples}</p>
                     </div>
                   )}
+
+                  {selectedAnswerObj.wikipedia_links && Object.keys(selectedAnswerObj.wikipedia_links).length > 0 && (
+  <div className="flex flex-wrap gap-2 pt-2">
+    {Object.entries(selectedAnswerObj.wikipedia_links).map(([label, url]) => (
+      
+        key={label}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:hover:bg-blue-800"
+      >
+        {label}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    ))}
+  </div>
+)}
                 </AlertDescription>
               </Alert>
             )}
