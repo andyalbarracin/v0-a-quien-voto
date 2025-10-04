@@ -57,6 +57,7 @@ export default async function ResultadosPage({
       )
     `,
   )
+  
 
   const positions = (rawPositions || []).map((p: any) => ({
     ...p,
@@ -133,30 +134,66 @@ export default async function ResultadosPage({
     })
   })
 
-  const partyResults = parties
-    ?.map((party) => {
-      const scores = partyScores[party.id]
-      const percentage = scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
+const partyResults = await Promise.all(
+  (parties || []).map(async (party) => {
+    const scores = partyScores[party.id]
+    const percentage =
+      scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
 
-      return {
-        party,
-        percentage,
-        matches: scores.matches,
-        conflicts: scores.conflicts,
-        compassDistance: scores.compassDistance,
-        declarations: [],
-        votes: [],
-        antecedentes: [],
-        analysis: "",
-      }
-    })
-    .sort((a, b) => {
-  // Primero por porcentaje (más alto primero)
+    // 👇 consulta a candidatos
+    const { data: candidates } = await supabase
+      .from("candidates")
+      .select(`
+        *,
+        public_statements (
+          statement_text,
+          statement_date,
+          source_url
+        ),
+        voting_records (
+          bill_name,
+          vote_type,
+          vote_date,
+          notes
+        )
+      `)
+      .eq("political_party_id", party.id)
+
+    return {
+      party,
+      percentage,
+      matches: scores.matches,
+      conflicts: scores.conflicts,
+      compassDistance: scores.compassDistance,
+      declarations: candidates
+    ? candidates.flatMap((c) =>
+        (c.public_statements || []).map((s: any) => ({
+          date: s.statement_date,
+          text: s.statement_text,
+        }))
+      )
+    : [],
+      votes: candidates
+    ? candidates.flatMap((c) =>
+        (c.voting_records || []).map((v: any) => ({
+          date: v.vote_date,
+          text: `${v.bill_name} - ${v.vote_type}`,
+        }))
+      )
+    : [],
+      antecedentes: candidates || [],
+      analysis: "",
+    }
+  })
+)
+
+// ordenamiento
+partyResults.sort((a, b) => {
   const percentageDiff = b.percentage - a.percentage
   if (Math.abs(percentageDiff) > 5) return percentageDiff
-  // Si los porcentajes son similares, desempata con distancia
   return a.compassDistance - b.compassDistance
 })
+
 
   return (
     <ResultsClient
