@@ -140,7 +140,7 @@ const partyResults = await Promise.all(
     const percentage =
       scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
 
-    // 👇 consulta a candidatos
+    // consulta a candidatos
     const { data: candidates } = await supabase
       .from("candidates")
       .select(`
