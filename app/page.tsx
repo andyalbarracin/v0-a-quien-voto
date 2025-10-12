@@ -51,7 +51,7 @@ export default function HomePage() {
               <CardHeader>
                 <TrendingUp className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Economía</CardTitle>
-                <CardDescription>Políticas económicas, gasto público, inflación y desarrollo. Ej: Liberalización en Chile vs. Estatismo en Venezuela.</CardDescription>
+                <CardDescription>Define el desarrollo y el bienestar: políticas abiertas impulsan crecimiento, mientras sistemas cerrados generan estancamiento. Ej: Liberalización en Chile vs. Estatismo en Venezuela.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -60,7 +60,7 @@ export default function HomePage() {
                 <Shield className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Seguridad</CardTitle>
                 <CardDescription>
-                  Políticas de seguridad ciudadana, sistema penal y fuerzas de seguridad. Contradicciones en votaciones de izquierda/kirchneristas.
+                  Garantiza la vida cotidiana: sin un sistema penal eficaz, la violencia y el delito condicionan a toda la sociedad.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -69,7 +69,7 @@ export default function HomePage() {
               <CardHeader>
                 <Heart className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Salud</CardTitle>
-                <CardDescription>Sistema de salud pública, cobertura médica y políticas sanitarias. Recortes bajo Massa 2022 (-ARS 50kM).</CardDescription>
+                <CardDescription>Sistema de salud pública, cobertura médica y políticas sanitarias. Que sistemas ofrecen mejor cobertura y servicios sostenibles.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -77,7 +77,7 @@ export default function HomePage() {
               <CardHeader>
                 <GraduationCap className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Educación</CardTitle>
-                <CardDescription>Sistema educativo, universidades y presupuesto. Recortes Massa 2022 (70% inicial, deserción +15% PBA).</CardDescription>
+                <CardDescription>Determina el futuro: la inversión sin auditoría no mejora resultados, pero las políticas claras elevan la calidad.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -85,7 +85,7 @@ export default function HomePage() {
               <CardHeader>
                 <Scale className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Justicia</CardTitle>
-                <CardDescription>Sistema judicial, derechos humanos y reformas legales. Abstenciones en leyes contra pornografía infantil (FIT).</CardDescription>
+                <CardDescription>Sistema judicial, derechos humanos y reformas legales. Protege derechos y convivencia: instituciones sólidas son clave contra el crimen y la corrupción.</CardDescription>
               </CardHeader>
             </Card>
 
@@ -93,7 +93,7 @@ export default function HomePage() {
               <CardHeader>
                 <Briefcase className="h-8 w-8 text-primary" />
                 <CardTitle className="mt-4">Trabajo</CardTitle>
-                <CardDescription>Políticas laborales, sindicatos y empleo. Reformas flexibles vs. rígidas (EE.UU. empleo 55% vs. Venezuela 20%).</CardDescription>
+                <CardDescription>Sostiene la dignidad social: sistemas flexibles crean empleo formal, mientras rigideces alimentan la informalidad.</CardDescription>
               </CardHeader>
             </Card>
           </div>

@@ -7,6 +7,26 @@ import { notFound } from "next/navigation"
 import { ExternalLink, Building2 } from "lucide-react"
 import Link from "next/link"
 
+// Helper function to determine vote badge styling
+function getVoteBadgeStyle(voteType: string) {
+  const normalizedVote = voteType.toLowerCase().trim()
+  
+  if (normalizedVote.includes('favor') || normalizedVote.includes('impulso')) {
+    return { variant: 'default' as const, label: 'A FAVOR', className: 'bg-green-600 hover:bg-green-700' }
+  }
+  if (normalizedVote.includes('contra') && !normalizedVote.includes('posicionamiento')) {
+    return { variant: 'destructive' as const, label: 'EN CONTRA', className: '' }
+  }
+  if (normalizedVote.includes('abstencion') || normalizedVote.includes('abstención')) {
+    return { variant: 'secondary' as const, label: 'ABSTENCIÓN', className: 'bg-yellow-600 hover:bg-yellow-700' }
+  }
+  if (normalizedVote.includes('posicionamiento')) {
+    return { variant: 'outline' as const, label: 'POSICIONAMIENTO', className: 'border-blue-600 text-blue-600' }
+  }
+  
+  return { variant: 'secondary' as const, label: voteType.toUpperCase(), className: '' }
+}
+
 export default async function CandidateDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -176,59 +196,52 @@ export default async function CandidateDetailPage({ params }: { params: Promise<
           <h2 className="mb-6 text-2xl font-bold text-foreground">Historial de Votaciones Detallado</h2>
           {votingRecords && votingRecords.length > 0 ? (
             <div className="space-y-4">
-              {votingRecords.map((record) => (
-                <Card key={record.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        {record.positions && (
-                          <Badge variant="outline" className="mb-2">
-                            {record.positions.topics?.name}
-                          </Badge>
-                        )}
-                        <CardTitle className="text-lg">{record.bill_name || "Votación legislativa"}</CardTitle>
-                        {record.positions && (
-                          <CardDescription className="mt-2">{record.positions.title}</CardDescription>
+              {votingRecords.map((record) => {
+                const badgeStyle = getVoteBadgeStyle(record.vote_type)
+                return (
+                  <Card key={record.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          {record.positions && (
+                            <Badge variant="outline" className="mb-2">
+                              {record.positions.topics?.name}
+                            </Badge>
+                          )}
+                          <CardTitle className="text-lg">{record.bill_name || "Votación legislativa"}</CardTitle>
+                          {record.positions && (
+                            <CardDescription className="mt-2">{record.positions.title}</CardDescription>
+                          )}
+                        </div>
+                        <Badge
+                          variant={badgeStyle.variant}
+                          className={`shrink-0 ${badgeStyle.className}`}
+                        >
+                          {badgeStyle.label}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        {record.vote_date && <span>{new Date(record.vote_date).toLocaleDateString("es-AR")}</span>}
+                        {record.legislative_session && <span>Sesión: {record.legislative_session}</span>}
+                        {record.source_url && (
+                          <a
+                            href={record.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            <span>Ver fuente oficial</span>
+                          </a>
                         )}
                       </div>
-                      <Badge
-                        variant={
-                          record.vote_type === "favor"
-                            ? "default"
-                            : record.vote_type === "contra"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                        className="shrink-0"
-                      >
-                        {record.vote_type === "favor"
-                          ? "A favor"
-                          : record.vote_type === "contra"
-                            ? "En contra"
-                            : "Abstención"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      {record.vote_date && <span>{new Date(record.vote_date).toLocaleDateString("es-AR")}</span>}
-                      {record.legislative_session && <span>Sesión: {record.legislative_session}</span>}
-                      {record.source_url && (
-                        <a
-                          href={record.source_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          <span>Ver fuente oficial</span>
-                        </a>
-                      )}
-                    </div>
-                    {record.notes && <p className="mt-3 text-sm text-muted-foreground">{record.notes}</p>}
-                  </CardContent>
-                </Card>
-              ))}
+                      {record.notes && <p className="mt-3 text-sm text-muted-foreground">{record.notes}</p>}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           ) : (
             <Card>

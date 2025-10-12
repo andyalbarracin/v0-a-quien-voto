@@ -1,3 +1,8 @@
+// components/quiz-client.tsx
+// Ruta: components/quiz-client.tsx
+// Última modificación: October 08, 2025
+// Descripción: Cliente de quiz con mensajes de transición entre secciones (preguntas originales, opinión política, inflación). Muestra cards informativos antes de comenzar cada nueva sección temática.
+
 "use client"
 
 import { useState } from "react"
@@ -7,7 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, ArrowRight, CheckCircle2, BookOpen, ChevronRight, ExternalLink } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, BookOpen, ChevronRight, Info, TrendingUp } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
@@ -49,17 +54,82 @@ type UserAnswer = {
   question_weight: number
 }
 
+type SectionTransition = {
+  title: string
+  description: string
+  icon: React.ReactNode
+  questionsRange: string
+}
+
+const SECTION_TRANSITIONS: Record<number, SectionTransition> = {
+  11: {
+    title: "Sección 2: Opinión Política Personal",
+    description: "Ahora vamos con 10 preguntas sobre tus opiniones políticas personales. Estas preguntas exploran temas como educación, salud, justicia y rol del Estado en la sociedad argentina.",
+    icon: <Info className="h-6 w-6" />,
+    questionsRange: "Preguntas 11-20"
+  },
+  21: {
+    title: "Sección 3: Inflación en Argentina",
+    description: "Por último, 5 preguntas específicas sobre la inflación en Argentina. Este tema crítico define gran parte del debate económico actual y las propuestas de cada espacio político.",
+    icon: <TrendingUp className="h-6 w-6" />,
+    questionsRange: "Preguntas 21-25"
+  }
+}
+
 export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<UserAnswer[]>([])
   const [selectedAnswer, setSelectedAnswer] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showTransition, setShowTransition] = useState<number | null>(null)
   const router = useRouter()
 
   const currentQuestion = questions[currentQuestionIndex]
   const nextQuestion = currentQuestionIndex < questions.length - 1 ? questions[currentQuestionIndex + 1] : null
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100
   const isLastQuestion = currentQuestionIndex === questions.length - 1
+
+  // Detectar si estamos en una transición de sección
+  const currentTransition = SECTION_TRANSITIONS[currentQuestion?.question_order]
+  
+  // Si hay una transición pendiente y no la hemos mostrado aún
+  if (currentTransition && showTransition !== currentQuestion.question_order) {
+    return (
+      <div className="min-h-screen bg-background px-6 py-12">
+        <div className="mx-auto max-w-4xl">
+          <Card className="border-2 border-primary">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                {currentTransition.icon}
+              </div>
+              <CardTitle className="text-3xl">{currentTransition.title}</CardTitle>
+              <CardDescription className="text-base">
+                {currentTransition.questionsRange}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <p className="text-center text-lg leading-relaxed text-muted-foreground">
+                {currentTransition.description}
+              </p>
+              
+              <div className="rounded-lg bg-muted p-4">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Progreso general:</strong> Has completado {currentQuestionIndex} de {questions.length} preguntas ({Math.round((currentQuestionIndex / questions.length) * 100)}%)
+                </p>
+              </div>
+
+              <div className="flex justify-center">
+                <Button size="lg" onClick={() => setShowTransition(currentQuestion.question_order)}>
+                  Continuar con esta sección
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const selectedAnswerObj = currentQuestion.quiz_answers.find((a) => a.id === selectedAnswer)
 
@@ -100,6 +170,11 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
       const nextQuestion = questions[currentQuestionIndex + 1]
       const existingAnswer = updatedAnswers.find((a) => a.question_id === nextQuestion.id)
       setSelectedAnswer(existingAnswer?.answer_id || "")
+      
+      // Reset transition flag cuando pasamos a siguiente pregunta
+      if (SECTION_TRANSITIONS[nextQuestion.question_order]) {
+        setShowTransition(null)
+      }
     }
   }
 
@@ -109,6 +184,11 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
       const previousQuestion = questions[currentQuestionIndex - 1]
       const existingAnswer = answers.find((a) => a.question_id === previousQuestion.id)
       setSelectedAnswer(existingAnswer?.answer_id || "")
+      
+      // Mantener la transición mostrada si volvemos
+      if (SECTION_TRANSITIONS[previousQuestion.question_order]) {
+        setShowTransition(previousQuestion.question_order)
+      }
     }
   }
 
@@ -135,12 +215,12 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
       })
 
       if (error) {
-        console.error("[v0] Error saving quiz results:", error)
+        console.error("[QuizClient] Error saving quiz results:", error)
       }
 
       router.push(`/resultados?session=${sessionId}`)
     } catch (error) {
-      console.error("[v0] Error submitting quiz:", error)
+      console.error("[QuizClient] Error submitting quiz:", error)
       setIsSubmitting(false)
     }
   }

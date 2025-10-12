@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { notFound } from "next/navigation"
-import { ExternalLink, Calendar, Users } from "lucide-react"
+import { ExternalLink, Calendar, Users, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 
 export default async function PartyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +40,9 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
     .eq("party_id", id)
     .order("statement_date", { ascending: false })
     .limit(10)
+
+  // Check if party has no candidates
+  const hasNoCandidates = !candidates || candidates.length === 0
 
   return (
     <div className="min-h-screen bg-background px-6 py-12">
@@ -76,9 +80,9 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
                 </span>
               </div>
             )}
-            {party.website && (
+            {party.website_url && (
               <a
-                href={party.website}
+                href={party.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-primary hover:underline"
@@ -95,7 +99,14 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
         {/* Candidates Section */}
         <section className="mb-12">
           <h2 className="mb-6 text-2xl font-bold text-foreground">Candidatos 2025</h2>
-          {candidates && candidates.length > 0 ? (
+          {hasNoCandidates ? (
+            <Alert variant="default" className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-yellow-900 dark:text-yellow-100">
+                ⚠️ Este espacio no presenta candidatos en esta elección
+              </AlertDescription>
+            </Alert>
+          ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {candidates.map((candidate) => (
                 <Link key={candidate.id} href={`/candidatos/${candidate.id}`}>
@@ -117,12 +128,6 @@ export default async function PartyDetailPage({ params }: { params: Promise<{ id
                 </Link>
               ))}
             </div>
-          ) : (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                No hay candidatos registrados para este partido.
-              </CardContent>
-            </Card>
           )}
         </section>
 
