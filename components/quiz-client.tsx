@@ -192,26 +192,17 @@ export function QuizClient({ questions }: { questions: QuizQuestion[] }) {
     }
   }
 
-  const handleSubmit = async (finalAnswers: UserAnswer[]) => {
+const handleSubmit = async (finalAnswers: UserAnswer[]) => {
     setIsSubmitting(true)
 
     try {
-      const positionScores: Record<string, number> = {}
-
-      finalAnswers.forEach((answer) => {
-        if (!positionScores[answer.position_id]) {
-          positionScores[answer.position_id] = 0
-        }
-        positionScores[answer.position_id] += answer.position_weight * answer.question_weight
-      })
-
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`
 
       const supabase = createClient()
       const { error } = await supabase.from("quiz_results").insert({
         session_id: sessionId,
         answers: finalAnswers,
-        results: positionScores,
+        results: {}, // Ya no necesitamos pre-calcular nada aquí
       })
 
       if (error) {

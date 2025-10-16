@@ -1,24 +1,14 @@
 // app/resultados/page.tsx
 // Ruta: app/resultados/page.tsx
-// Última modificación: October 10, 2025
-// Descripción: Cálculo de afinidad con coeficiente UCR (70% de UP), debug mejorado, análisis histórico riguroso basado en datos reales de gestiones argentinas y comparaciones internacionales contextualizadas.
+// Última modificación: 12 de octubre, 2025
+// Descripción: Página de resultados del quiz. Calcula afinidad partidaria usando el nuevo sistema corregido en quiz-calculator.ts
 
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { ResultsClient } from "@/components/results-client"
 import { calculateCompassPosition } from "@/lib/calculate-compass-position"
-
-// Mapeo de stance a score multiplier
-const STANCE_MULTIPLIERS: Record<string, number> = {
-  'strongly_support': 1.0,
-  'support': 0.75,
-  'neutral': 0.5,
-  'oppose': 0.25,
-  'strongly_oppose': 0.0,
-  // Compatibilidad con valores legacy
-  'favor': 1.0,
-  'contra': 0.0,
-}
+import { calculatePartyScores, applyUCRCoefficient, calculatePercentage } from "@/lib/quiz-calculator"
+import type { UserAnswer } from "@/lib/types"
 
 export default async function ResultadosPage({
   searchParams,
@@ -33,6 +23,7 @@ export default async function ResultadosPage({
 
   const supabase = await createClient()
 
+  // 1. Obtener resultado del quiz
   const { data: quizResult, error: resultError } = await supabase
     .from("quiz_results")
     .select("*")
@@ -44,33 +35,28 @@ export default async function ResultadosPage({
     redirect("/quiz")
   }
 
-  const { data: parties } = await supabase.from("political_parties").select("*, economic_axis, social_axis")
+  // 2. Obtener datos necesarios de Supabase
+  const { data: parties } = await supabase
+    .from("political_parties")
+    .select("*, economic_axis, social_axis")
 
-  const { data: partyPositions } = await supabase.from("party_positions").select(
-    `
-      party_id,
-      position_id,
-      stance,
-      strength
-    `,
-  )
+  const { data: partyPositions } = await supabase
+    .from("party_positions")
+    .select("party_id, position_id, stance, strength")
 
-  const { data: rawPositions } = await supabase.from("positions").select(
-    `
+  const { data: rawPositions } = await supabase
+    .from("positions")
+    .select(`
       id,
       title,
       description,
       weight,
       economic_weight,
       social_weight,
-      topics (
-        id,
-        name,
-        icon
-      )
-    `,
-  )
+      topics (id, name, icon)
+    `)
 
+  // 3. Normalizar datos
   const positions = (rawPositions || []).map((p: any) => ({
     ...p,
     topics: Array.isArray(p.topics) ? p.topics[0] : p.topics,
@@ -78,158 +64,57 @@ export default async function ResultadosPage({
     social_weight: p.social_weight ?? 0
   }))
 
-  const userAnswers = quizResult.answers as Array<{
-    position_id: string
-    position_weight: number
-    question_weight: number
-  }>
+  const userAnswers = quizResult.answers as UserAnswer[]
 
   console.log("[ResultadosPage] Total user answers:", userAnswers.length)
   console.log("[ResultadosPage] Total positions:", positions?.length)
   console.log("[ResultadosPage] Total party_positions:", partyPositions?.length)
 
-  const userCompassPosition = calculateCompassPosition(userAnswers, positions || [])
+  // 4. Calcular posición del usuario en la brújula política
+  const userCompassPosition = calculateCompassPosition(userAnswers, positions)
 
-  const partyScores: Record<string, {
-    score: number
-    maxScore: number
-    matches: Array<{ position: string; topic: string }>
-    conflicts: Array<{ position: string; topic: string }>
-    compassDistance: number
-    debugInfo: Array<{ position: string; stance: string; weight: number; score: number }>
-  }> = {}
+  // 5. CÁLCULO PRINCIPAL: Calcular scores de afinidad por partido
+  const partyScores = calculatePartyScores(
+    userAnswers,
+    parties || [],
+    partyPositions || [],
+    positions,
+    userCompassPosition
+  )
 
-  parties?.forEach((party) => {
-    partyScores[party.id] = {
-      score: 0,
-      maxScore: 0,
-      matches: [],
-      conflicts: [],
-      compassDistance: Math.sqrt(
-        Math.pow(userCompassPosition.economic - (party.economic_axis || 0), 2) +
-          Math.pow(userCompassPosition.social - (party.social_axis || 0), 2),
-      ),
-      debugInfo: []
-    }
-  })
+  // 6. Aplicar coeficiente UCR (70% de UP)
+  applyUCRCoefficient(partyScores, parties || [])
 
-  const getTopicName = (topics: any): string => {
-    if (!topics) return "General"
-    if (Array.isArray(topics)) return topics[0]?.name || "General"
-    return topics.name || "General"
-  }
-
-  // ========================================
-// EN: app/resultados/page.tsx
-// Reemplazar SOLO el bloque de cálculo (aproximadamente líneas 86-120)
-// ========================================
-
-userAnswers.forEach((answer, idx) => {
-  const position = positions?.find((p) => p.id === answer.position_id)
-  if (!position) {
-    console.warn(`[ResultadosPage] Position not found for answer ${idx}:`, answer.position_id)
-    return
-  }
-
-  const answerWeight = answer.position_weight * answer.question_weight
-
-  parties?.forEach((party) => {
-    if (!partyScores[party.id]) return
-
-    // Cada pregunta suma al maxScore
-    partyScores[party.id].maxScore += answerWeight
-
-    const partyPosition = partyPositions?.find(
-      (pp) => pp.party_id === party.id && pp.position_id === answer.position_id
-    )
-
-    if (partyPosition) {
-      const stanceMultiplier = STANCE_MULTIPLIERS[partyPosition.stance] ?? 0.5
-      
-      // ⚠️ CAMBIO PRINCIPAL: Eliminado el factor (strength / 100)
-      // ANTES: const positionScore = answerWeight * stanceMultiplier * (strength / 100)
-      // AHORA: Solo stance determina el score
-      const positionScore = answerWeight * stanceMultiplier
-      
-      partyScores[party.id].score += positionScore
-
-      // Debug info (mantener para verificar que funciona)
-      partyScores[party.id].debugInfo.push({
-        position: position.title,
-        stance: partyPosition.stance,
-        weight: answerWeight,
-        score: positionScore
-      })
-
-      // Clasificar como match o conflict (sin cambios)
-      if (['strongly_support', 'support', 'favor'].includes(partyPosition.stance)) {
-        partyScores[party.id].matches.push({
-          position: position.title,
-          topic: getTopicName(position.topics),
-        })
-      } else if (['strongly_oppose', 'oppose', 'contra'].includes(partyPosition.stance)) {
-        partyScores[party.id].conflicts.push({
-          position: position.title,
-          topic: getTopicName(position.topics),
-        })
-      }
-    } else {
-      console.warn(`[ResultadosPage] No party position found for ${party.acronym} on position:`, position.title)
-    }
-  })
-})
-
-// El resto del código permanece IGUAL (coeficiente UCR, ordenamiento, etc.)
-
-  // ========================================
-  // APLICAR COEFICIENTE UCR = 70% de UP
-  // ========================================
-  const upParty = parties?.find(p => p.acronym === 'UP')
-  const ucrParty = parties?.find(p => p.acronym === 'UCR')
-  
-  if (upParty && ucrParty && partyScores[upParty.id] && partyScores[ucrParty.id]) {
-    const upPercentage = partyScores[upParty.id].maxScore > 0 
-      ? (partyScores[upParty.id].score / partyScores[upParty.id].maxScore) * 100 
-      : 0
-    
-    const ucrAdjustedPercentage = upPercentage * 0.70
-    
-    // Ajustar el score de UCR para que resulte en el 70% de UP
-    if (partyScores[ucrParty.id].maxScore > 0) {
-      partyScores[ucrParty.id].score = (ucrAdjustedPercentage / 100) * partyScores[ucrParty.id].maxScore
-    }
-    
-    console.log(`[ResultadosPage] UCR COEFICIENTE APLICADO: UP=${upPercentage.toFixed(1)}%, UCR=${ucrAdjustedPercentage.toFixed(1)}%`)
-  }
-
-  // Log debug info
+  // 7. Log de debug
   parties?.forEach((party) => {
     const scores = partyScores[party.id]
-    console.log(`[ResultadosPage] ${party.acronym}: score=${scores.score.toFixed(2)}, maxScore=${scores.maxScore.toFixed(2)}, percentage=${scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0}%`)
+    const percentage = calculatePercentage(scores.score, scores.maxScore)
+    console.log(
+      `[ResultadosPage] ${party.acronym}: score=${scores.score.toFixed(2)}, maxScore=${scores.maxScore.toFixed(2)}, percentage=${percentage}%`
+    )
+    
+    // Log detallado de los primeros 3 matches/conflicts
+    if (scores.debugInfo.length > 0) {
+      console.log(`  Primeras 3 posiciones:`)
+      scores.debugInfo.slice(0, 3).forEach(info => {
+        console.log(`    - ${info.position}: stance=${info.stance}, score=${info.score.toFixed(2)}`)
+      })
+    }
   })
 
+  // 8. Generar resultados finales con análisis contextual
   const partyResults = await Promise.all(
     (parties || []).map(async (party) => {
       const scores = partyScores[party.id]
-      const percentage =
-        scores.maxScore > 0 ? Math.round((scores.score / scores.maxScore) * 100) : 0
+      const percentage = calculatePercentage(scores.score, scores.maxScore)
 
-      // Consulta a candidatos
+      // Consulta a candidatos para declaraciones y votaciones
       const { data: candidates } = await supabase
         .from("candidates")
         .select(`
           *,
-          public_statements (
-            statement_text,
-            statement_date,
-            source_url
-          ),
-          voting_records (
-            bill_name,
-            vote_type,
-            vote_date,
-            notes
-          )
+          public_statements (statement_text, statement_date, source_url),
+          voting_records (bill_name, vote_type, vote_date, notes)
         `)
         .eq("political_party_id", party.id)
 
@@ -261,23 +146,27 @@ userAnswers.forEach((answer, idx) => {
     })
   )
 
-  // Ordenamiento
+  // 9. Ordenar resultados: primero por porcentaje, luego por distancia ideológica
   partyResults.sort((a, b) => {
     const percentageDiff = b.percentage - a.percentage
     if (Math.abs(percentageDiff) > 5) return percentageDiff
     return a.compassDistance - b.compassDistance
   })
 
+  // 10. Renderizar cliente con resultados
   return (
     <ResultsClient
-      results={partyResults || []}
+      results={partyResults}
       userAnswers={quizResult.answers}
       userCompassPosition={userCompassPosition}
     />
   )
 }
 
-// Función para generar análisis contextual con datos históricos reales
+// ===========================================
+// FUNCIÓN DE ANÁLISIS CONTEXTUAL
+// ===========================================
+
 function generateContextualAnalysis(
   party: any,
   scores: { matches: any[]; conflicts: any[]; compassDistance: number },
@@ -289,7 +178,6 @@ function generateContextualAnalysis(
   
   let analysis = ""
 
-  // Análisis por partido con contexto histórico
   switch(acronym) {
     case 'LLA':
       analysis = `La Libertad Avanza se posiciona como liberal-libertario en el cuadrante superior derecho del espectro político. Propone liberalismo económico radical (dolarización, apertura comercial, reducción drástica del Estado) y liberalismo social. `
@@ -344,7 +232,6 @@ function generateContextualAnalysis(
       analysis = `${party.name} presenta un perfil ${economicDiff < 3 ? 'cercano' : 'distante'} a tu posición económica y ${socialDiff < 3 ? 'similar' : 'diferente'} en lo social.`
   }
 
-  // Agregar análisis de distancia ideológica
   analysis += ` Distancia ideológica total: ${scores.compassDistance.toFixed(2)} puntos en la brújula política.`
 
   return analysis
