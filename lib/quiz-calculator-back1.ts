@@ -74,69 +74,88 @@ export function calculatePartyScores(
         party.maxScore += totalWeight
 
         // Calcular puntos según stance
-        // Calcular puntos según stance
-let points = 0
-const userChoseThisPosition = answer.position_weight > 0 // El usuario eligió esta posición
-
-switch (pp.stance) {
-  case "strongly_support":
-    points = totalWeight * 1.0
-    if (userChoseThisPosition) {
-      party.matches.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-  case "support":
-    points = totalWeight * 0.75
-    if (userChoseThisPosition) {
-      party.matches.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-  case "neutral":
-    points = totalWeight * 0.5
-    break
-  case "oppose":
-    points = totalWeight * 0.25
-    if (userChoseThisPosition) {
-      party.conflicts.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-  case "strongly_oppose":
-    points = 0
-    if (userChoseThisPosition) {
-      party.conflicts.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-  case "favor":
-    points = totalWeight * 1.0
-    if (userChoseThisPosition) {
-      party.matches.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-  case "contra":
-    points = 0
-    if (userChoseThisPosition) {
-      party.conflicts.push({
-        position: position.title,
-        topic: getTopicName(position.topics)
-      })
-    }
-    break
-}
+        let points = 0
+        switch (pp.stance) {
+          case "strongly_support":
+            points = totalWeight * 1.0
+            party.matches.push({
+              position: position.title,
+              topic: getTopicName(position.topics)
+            })
+            break
+          case "support":
+            points = totalWeight * 0.75
+            party.matches.push({
+              position: position.title,
+              topic: getTopicName(position.topics)
+            })
+            break
+          case "neutral":
+            points = totalWeight * 0.5
+            break
+          /*case "oppose":
+            //points = totalWeight * 0.25
+            //party.conflicts.push({
+              //position: position.title,
+              //topic: getTopicName(position.topics)
+            //})
+            //break
+          //case "strongly_oppose":
+            //points = 0
+            //party.conflicts.push({
+              //position: position.title,
+              //topic: getTopicName(position.topics)
+            //})
+            break*/
+            
+            //Reparando los conflictos en posturas de izquierda y progresistas cambiamos esto
+            /*case "oppose":
+              points = totalWeight * 0.25
+              // Solo agregar a conflicts si el usuario eligió esta posición (position_weight > 0)
+              if (answer.position_weight > 0) {
+                party.conflicts.push({
+                  position: position.title,
+                  topic: getTopicName(position.topics)
+                })
+              }
+            break
+            case "strongly_oppose":
+              points = 0
+              // Solo agregar a conflicts si el usuario eligió esta posición (position_weight > 0)
+              if (answer.position_weight > 0) {
+                party.conflicts.push({
+                  position: position.title,
+                  topic: getTopicName(position.topics)
+                })
+              }
+            break*/
+            //Agregando esto 16/10
+            case "oppose":
+            points = totalWeight * 0.25
+            // NO agregar a conflicts - el usuario no eligió esta posición
+            break
+            case "strongly_oppose":
+            points = 0
+            // NO agregar a conflicts - el usuario no eligió esta posición
+            break
+            
+            
+            case "favor":
+            points = totalWeight * 1.0
+            party.matches.push({
+              position: position.title,
+              topic: getTopicName(position.topics)
+            })
+            break
+          case "contra":
+            points = 0
+            party.conflicts.push({
+              position: position.title,
+              topic: getTopicName(position.topics)
+            })
+            break
+        }
+        
         party.score += points
 
         // Debug info
